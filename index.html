@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="th">
-<head>  
-  <meta charset="UTF-8"> 
+<head>
+  <meta charset="UTF-8">
   <title>สมาชิกสถานีนักกล้าม</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -29,6 +29,11 @@
 
     h1, h2, p {
       margin-top: 0;
+    }
+
+    label {
+      font-size: 14px;
+      color: #ccc;
     }
 
     input, select {
@@ -66,7 +71,6 @@
 
     .active {
       background: #1b5e20;
-      color: #fff;
     }
 
     .pending {
@@ -76,24 +80,26 @@
 
     .expired {
       background: #b71c1c;
-      color: #fff;
-    }
-
-    .menu-btn {
-      background: #2a2a2a;
-      text-align: left;
     }
 
     .small {
       color: #aaa;
       font-size: 14px;
     }
+
+    .loading {
+      text-align: center;
+      padding: 30px 10px;
+    }
   </style>
 </head>
 
 <body>
   <div class="container" id="app">
-    กำลังโหลด...
+    <div class="card loading">
+      <h2>🏋️ กำลังเปิดระบบสมาชิก...</h2>
+      <p class="small">กรุณารอสักครู่</p>
+    </div>
   </div>
 
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
@@ -101,38 +107,75 @@
   <script>
     const LIFF_ID = '2010600499-3bta2tAd';
     const API_URL = 'https://script.google.com/macros/s/AKfycbzDfEEgAQAoKTMMBq2xN8Y266sXp5N71w6gm05umXKj_oJOvRtQIPWMcUh29NT4Dzqj/exec';
+    const BOOKING_URL = 'https://liff.line.me/2010600499-3bta2tAd';
+    const LINE_OA_URL = 'https://line.me/R/ti/p/@sathaninakklam';
 
     let profile = null;
 
     async function main() {
-      await liff.init({ liffId: LIFF_ID });
+      try {
+        showLoading();
 
-      if (!liff.isLoggedIn()) {
-        liff.login();
-        return;
-      }
+        await liff.init({ liffId: LIFF_ID });
 
-      profile = await liff.getProfile();
+        if (!liff.isLoggedIn()) {
+          liff.login();
+          return;
+        }
 
-      const result = await apiPost({
-        action: 'checkMember',
-        lineUserId: profile.userId
-      });
+        profile = await liff.getProfile();
 
-      if (result.found) {
-        renderDashboard(result.member);
-      } else {
-        renderRegisterForm();
+        const result = await apiPost({
+          action: 'checkMember',
+          lineUserId: profile.userId
+        });
+
+        if (!result.success) {
+          showError(result.message || 'ไม่สามารถเช็กข้อมูลสมาชิกได้');
+          return;
+        }
+
+        if (result.found) {
+          renderDashboard(result.member);
+        } else {
+          renderRegisterForm();
+        }
+
+      } catch (err) {
+        showError(err.message);
       }
     }
 
     async function apiPost(data) {
       const response = await fetch(API_URL, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'text/plain;charset=utf-8'
+        },
         body: JSON.stringify(data)
       });
 
       return await response.json();
+    }
+
+    function showLoading() {
+      document.getElementById('app').innerHTML = `
+        <div class="card loading">
+          <h2>🏋️ กำลังเปิดระบบสมาชิก...</h2>
+          <p class="small">กรุณารอสักครู่</p>
+        </div>
+      `;
+    }
+
+    function showError(message) {
+      document.getElementById('app').innerHTML = `
+        <div class="card">
+          <h2>เกิดข้อผิดพลาด</h2>
+          <p class="small">${message}</p>
+          <button onclick="location.reload()">โหลดใหม่</button>
+          <button class="btn-secondary" onclick="contactStaff()">ติดต่อพนักงาน</button>
+        </div>
+      `;
     }
 
     function renderRegisterForm() {
@@ -174,24 +217,31 @@
         return;
       }
 
-      const result = await apiPost({
-        action: 'registerMember',
-        lineUserId: profile.userId,
-        displayName: profile.displayName,
-        fullName,
-        phone,
-        birthday,
-        gender
-      });
+      try {
+        showLoading();
 
-      if (result.success) {
-        renderPending({
-          FullName: fullName,
-          MemberID: result.memberId,
-          Status: 'Pending'
+        const result = await apiPost({
+          action: 'registerMember',
+          lineUserId: profile.userId,
+          displayName: profile.displayName,
+          fullName,
+          phone,
+          birthday,
+          gender
         });
-      } else {
-        alert(result.message);
+
+        if (result.success) {
+          renderPending({
+            FullName: fullName,
+            MemberID: result.memberId,
+            Status: 'Pending'
+          });
+        } else {
+          showError(result.message || 'สมัครสมาชิกไม่สำเร็จ');
+        }
+
+      } catch (err) {
+        showError(err.message);
       }
     }
 
@@ -216,7 +266,7 @@
 
       document.getElementById('app').innerHTML = `
         <div class="card">
-          <h1>👋 สวัสดี คุณ${member.FullName || member.DisplayName}</h1>
+          <h1>👋 สวัสดี คุณ${member.FullName || member.DisplayName || ''}</h1>
           <h2>🏋️ สถานีนักกล้าม</h2>
 
           <p>สถานะสมาชิก</p>
@@ -264,7 +314,7 @@
     function renderExpired(member) {
       document.getElementById('app').innerHTML = `
         <div class="card">
-          <h1>👋 สวัสดี คุณ${member.FullName || member.DisplayName}</h1>
+          <h1>👋 สวัสดี คุณ${member.FullName || member.DisplayName || ''}</h1>
           <h2>สมาชิกหมดอายุ ❌</h2>
 
           <p>หมดอายุเมื่อ: <b>${formatDate(member.ExpireDate)}</b></p>
@@ -300,11 +350,11 @@
     }
 
     function renewMember() {
-      alert('ติดต่อเคาน์เตอร์เพื่อเปิดระบบต่ออายุ');
+      alert('กรุณาติดต่อเคาน์เตอร์เพื่อต่ออายุสมาชิก');
     }
 
     function bookIceBath() {
-      window.location.href = 'https://liff.line.me/2010600499-kGjbynE1';
+      window.location.href = BOOKING_URL;
     }
 
     function showBenefits() {
@@ -317,7 +367,7 @@
 
     function contactStaff() {
       liff.openWindow({
-        url: 'https://line.me/R/ti/p/@ใส่ไอดีไลน์OA',
+        url: LINE_OA_URL,
         external: true
       });
     }
