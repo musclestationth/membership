@@ -146,17 +146,20 @@
       }
     }
 
-    async function apiPost(data) {
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'text/plain;charset=utf-8'
-        },
-        body: JSON.stringify(data)
-      });
+async function apiPost(data) {
+  const response = await fetch(API_URL, {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
 
-      return await response.json();
-    }
+  const text = await response.text();
+
+  try {
+    return JSON.parse(text);
+  } catch (err) {
+    throw new Error('API ตอบกลับไม่ใช่ JSON: ' + text);
+  }
+}
 
     function showLoading() {
       document.getElementById('app').innerHTML = `
@@ -230,15 +233,15 @@
           gender
         });
 
-        if (result.success) {
-          renderPending({
-            FullName: fullName,
-            MemberID: result.memberId,
-            Status: 'Pending'
-          });
-        } else {
-          showError(result.message || 'สมัครสมาชิกไม่สำเร็จ');
-        }
+if (result.success) {
+  renderPending({
+    FullName: fullName,
+    MemberID: result.memberId || '-',
+    Status: 'Pending'
+  });
+} else {
+  showError(result.message || 'สมัครสมาชิกไม่สำเร็จ');
+}
 
       } catch (err) {
         showError(err.message);
