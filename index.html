@@ -1,1 +1,328 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>สมาชิกสถานีนักกล้าม</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: #fff;
+    }
+
+    .container {
+      padding: 20px;
+      max-width: 480px;
+      margin: auto;
+    }
+
+    .card {
+      background: #1c1c1c;
+      border-radius: 18px;
+      padding: 20px;
+      margin-bottom: 16px;
+      border: 1px solid #333;
+    }
+
+    h1, h2, p {
+      margin-top: 0;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 14px;
+      margin: 8px 0 14px;
+      border-radius: 10px;
+      border: none;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+
+    button {
+      width: 100%;
+      padding: 15px;
+      border: none;
+      border-radius: 12px;
+      background: #e53935;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      margin-top: 8px;
+    }
+
+    .btn-secondary {
+      background: #333;
+    }
+
+    .status {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-weight: bold;
+    }
+
+    .active {
+      background: #1b5e20;
+      color: #fff;
+    }
+
+    .pending {
+      background: #f9a825;
+      color: #111;
+    }
+
+    .expired {
+      background: #b71c1c;
+      color: #fff;
+    }
+
+    .menu-btn {
+      background: #2a2a2a;
+      text-align: left;
+    }
+
+    .small {
+      color: #aaa;
+      font-size: 14px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container" id="app">
+    กำลังโหลด...
+  </div>
+
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
+  <script>
+    const LIFF_ID = '2010600499-3bta2tAd';
+    const API_URL = 'https://script.google.com/macros/s/AKfycbzDfEEgAQAoKTMMBq2xN8Y266sXp5N71w6gm05umXKj_oJOvRtQIPWMcUh29NT4Dzqj/exec';
+
+    let profile = null;
+
+    async function main() {
+      await liff.init({ liffId: LIFF_ID });
+
+      if (!liff.isLoggedIn()) {
+        liff.login();
+        return;
+      }
+
+      profile = await liff.getProfile();
+
+      const result = await apiPost({
+        action: 'checkMember',
+        lineUserId: profile.userId
+      });
+
+      if (result.found) {
+        renderDashboard(result.member);
+      } else {
+        renderRegisterForm();
+      }
+    }
+
+    async function apiPost(data) {
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify(data)
+      });
+
+      return await response.json();
+    }
+
+    function renderRegisterForm() {
+      document.getElementById('app').innerHTML = `
+        <div class="card">
+          <h1>🏋️ สถานีนักกล้าม</h1>
+          <h2>สมัครสมาชิกครั้งแรก</h2>
+          <p class="small">กรอกข้อมูลเพื่อผูกบัญชี LINE กับสมาชิกของคุณ</p>
+
+          <label>ชื่อ-นามสกุล</label>
+          <input id="fullName" placeholder="เช่น สมชาย ใจดี">
+
+          <label>เบอร์โทร</label>
+          <input id="phone" type="tel" placeholder="เช่น 0812345678">
+
+          <label>วันเกิด</label>
+          <input id="birthday" type="date">
+
+          <label>เพศ</label>
+          <select id="gender">
+            <option value="">ไม่ระบุ</option>
+            <option value="ชาย">ชาย</option>
+            <option value="หญิง">หญิง</option>
+          </select>
+
+          <button onclick="submitRegister()">สมัครสมาชิก</button>
+        </div>
+      `;
+    }
+
+    async function submitRegister() {
+      const fullName = document.getElementById('fullName').value.trim();
+      const phone = document.getElementById('phone').value.trim();
+      const birthday = document.getElementById('birthday').value;
+      const gender = document.getElementById('gender').value;
+
+      if (!fullName || !phone) {
+        alert('กรุณากรอกชื่อและเบอร์โทร');
+        return;
+      }
+
+      const result = await apiPost({
+        action: 'registerMember',
+        lineUserId: profile.userId,
+        displayName: profile.displayName,
+        fullName,
+        phone,
+        birthday,
+        gender
+      });
+
+      if (result.success) {
+        renderPending({
+          FullName: fullName,
+          MemberID: result.memberId,
+          Status: 'Pending'
+        });
+      } else {
+        alert(result.message);
+      }
+    }
+
+    function renderDashboard(member) {
+      const status = member.Status;
+
+      if (status === 'Pending') {
+        renderPending(member);
+        return;
+      }
+
+      if (status === 'Expired') {
+        renderExpired(member);
+        return;
+      }
+
+      renderActive(member);
+    }
+
+    function renderActive(member) {
+      const daysLeft = calculateDaysLeft(member.ExpireDate);
+
+      document.getElementById('app').innerHTML = `
+        <div class="card">
+          <h1>👋 สวัสดี คุณ${member.FullName || member.DisplayName}</h1>
+          <h2>🏋️ สถานีนักกล้าม</h2>
+
+          <p>สถานะสมาชิก</p>
+          <span class="status active">Active ✅</span>
+
+          <br><br>
+
+          <p>แพ็กเกจ: <b>${member.Package || '-'}</b></p>
+          <p>วันหมดอายุ: <b>${formatDate(member.ExpireDate)}</b></p>
+          <p>เหลือ: <b>${daysLeft} วัน</b></p>
+        </div>
+
+        <div class="card">
+          <button onclick="renewMember()">💳 ต่ออายุสมาชิก</button>
+          <button onclick="bookIceBath()">🧊 จอง Ice Bath</button>
+          <button onclick="showBenefits()">🎁 สิทธิพิเศษสมาชิก</button>
+          <button onclick="showProfile()">👤 ข้อมูลส่วนตัว</button>
+          <button class="btn-secondary" onclick="contactStaff()">☎️ ติดต่อพนักงาน</button>
+        </div>
+      `;
+    }
+
+    function renderPending(member) {
+      document.getElementById('app').innerHTML = `
+        <div class="card">
+          <h1>🏋️ สถานีนักกล้าม</h1>
+          <h2>สมัครสมาชิกสำเร็จ ✅</h2>
+
+          <p>รหัสสมาชิก: <b>${member.MemberID || '-'}</b></p>
+          <p>สถานะสมาชิก</p>
+          <span class="status pending">รอเปิดใช้งาน ⏳</span>
+
+          <br><br>
+
+          <p>
+            กรุณาติดต่อพนักงานที่เคาน์เตอร์<br>
+            เพื่อชำระเงินและเปิดใช้งานสมาชิก
+          </p>
+
+          <button onclick="contactStaff()">☎️ ติดต่อพนักงาน</button>
+        </div>
+      `;
+    }
+
+    function renderExpired(member) {
+      document.getElementById('app').innerHTML = `
+        <div class="card">
+          <h1>👋 สวัสดี คุณ${member.FullName || member.DisplayName}</h1>
+          <h2>สมาชิกหมดอายุ ❌</h2>
+
+          <p>หมดอายุเมื่อ: <b>${formatDate(member.ExpireDate)}</b></p>
+
+          <button onclick="renewMember()">💳 ต่ออายุสมาชิก</button>
+          <button onclick="bookIceBath()">🧊 จอง Ice Bath</button>
+          <button class="btn-secondary" onclick="contactStaff()">☎️ ติดต่อพนักงาน</button>
+        </div>
+      `;
+    }
+
+    function calculateDaysLeft(expireDate) {
+      if (!expireDate) return '-';
+
+      const today = new Date();
+      const expire = new Date(expireDate);
+      const diff = expire - today;
+
+      return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+    }
+
+    function formatDate(dateText) {
+      if (!dateText) return '-';
+
+      const d = new Date(dateText);
+      if (isNaN(d)) return dateText;
+
+      return d.toLocaleDateString('th-TH', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    }
+
+    function renewMember() {
+      alert('ติดต่อเคาน์เตอร์เพื่อเปิดระบบต่ออายุ');
+    }
+
+    function bookIceBath() {
+      window.location.href = 'https://liff.line.me/2010600499-kGjbynE1';
+    }
+
+    function showBenefits() {
+      alert('สิทธิพิเศษสมาชิกจะเพิ่มภายหลัง');
+    }
+
+    function showProfile() {
+      alert('ข้อมูลส่วนตัวจะเพิ่มภายหลัง');
+    }
+
+    function contactStaff() {
+      liff.openWindow({
+        url: 'https://line.me/R/ti/p/@ใส่ไอดีไลน์OA',
+        external: true
+      });
+    }
+
+    main();
+  </script>
+</body>
+</html>
