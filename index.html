@@ -147,17 +147,33 @@
     }
 
 async function apiPost(data) {
-  const response = await fetch(API_URL, {
-    method: 'POST',
-    body: JSON.stringify(data)
-  });
-
-  const text = await response.text();
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 12000);
 
   try {
-    return JSON.parse(text);
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify(data),
+      signal: controller.signal
+    });
+
+    const text = await response.text();
+
+    try {
+      return JSON.parse(text);
+    } catch (err) {
+      throw new Error('ระบบ Google ตอบกลับผิดพลาด กรุณากดโหลดใหม่อีกครั้ง');
+    }
+
   } catch (err) {
-    throw new Error('API ตอบกลับไม่ใช่ JSON: ' + text);
+    if (err.name === 'AbortError') {
+      throw new Error('ระบบใช้เวลานานเกินไป กรุณากดโหลดใหม่อีกครั้ง');
+    }
+
+    throw err;
+
+  } finally {
+    clearTimeout(timeout);
   }
 }
 
