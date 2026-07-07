@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin สมาชิกสถานีนักกล้าม</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body { margin:0; font-family:Arial,sans-serif; background:#111; color:#fff; }
+    .container { padding:20px; max-width:900px; margin:auto; }
+    .card { background:#1c1c1c; border:1px solid #333; border-radius:16px; padding:16px; margin-bottom:14px; }
+    input, select, button { padding:10px; border-radius:8px; border:none; margin:4px 0; }
+    button { background:#e53935; color:#fff; font-weight:bold; cursor:pointer; }
+    .green { background:#1b5e20; }
+    .gray { background:#333; }
+    .row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
+    .small { color:#aaa; font-size:13px; }
+  </style>
+</head>
+
+<body>
+<div class="container">
+  <h1>🏋️ Admin สมาชิกสถานีนักกล้าม</h1>
+  <p class="small">จัดการสมาชิกจาก Firebase</p>
+
+  <div id="app">กำลังโหลดข้อมูล...</div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+import {
+  getFirestore,
+  collection,
+  getDocs,
+  doc,
+  updateDoc
+} from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDI3i71Y6ojdsxN4a60Dli4zcCt2_fmJpc",
+  authDomain: "musclestation-3e6ca.firebaseapp.com",
+  projectId: "musclestation-3e6ca",
+  storageBucket: "musclestation-3e6ca.firebasestorage.app",
+  messagingSenderId: "840246501105",
+  appId: "1:840246501105:web:8aff7eeb2f3d2186f9d350"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+let members = [];
+
+window.activateMember = activateMember;
+window.expireMember = expireMember;
+window.saveMember = saveMember;
+window.loadMembers = loadMembers;
+
+async function loadMembers() {
+  document.getElementById('app').innerHTML = 'กำลังโหลดข้อมูล...';
+
+  const snap = await getDocs(collection(db, "members"));
+
+  members = [];
+  snap.forEach(docSnap => {
+    members.push({
+      id: docSnap.id,
+      ...docSnap.data()
+    });
+  });
+
+  renderMembers();
+}
+
+function renderMembers() {
+  if (members.length === 0) {
+    document.getElementById('app').innerHTML = '<div class="card">ยังไม่มีสมาชิก</div>';
+    return;
+  }
+
+  document.getElementById('app').innerHTML = members.map((m, i) => `
+    <div class="card">
+      <h3>${m.FullName || m.DisplayName || '-'}</h3>
+      <p class="small">MemberID: ${m.MemberID || '-'}</p>
+      <p class="small">Phone: ${m.Phone || '-'}</p>
+      <p class="small">LINE ID: ${m.LineUserID || m.id}</p>
+
+      <div class="row">
+        <div>
+          <label class="small">Status</label><br>
+          <select id="status-${i}">
+            <option value="Pending" ${m.Status === 'Pending' ? 'selected' : ''}>Pending</option>
+            <option value="Active" ${m.Status === 'Active' ? 'selected' : ''}>Active</option>
+            <option value="Expired" ${m.Status === 'Expired' ? 'selected' : ''}>Expired</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="small">Package</label><br>
+          <input id="package-${i}" value="${m.Package || ''}" placeholder="เช่น รายเดือน">
+        </div>
+
+        <div>
+          <label class="small">ExpireDate</label><br>
+          <input id="expire-${i}" type="date" value="${m.ExpireDate || ''}">
+        </div>
+      </div>
+
+      <br>
+
+      <button class="green" onclick="activateMember(${i})">เปิดใช้งาน 30 วัน</button>
+      <button onclick="saveMember(${i})">บันทึก</button>
+      <button class="gray" onclick="expireMember(${i})">ตั้งเป็นหมดอายุ</button>
+    </div>
+  `).join('');
+}
+
+async function activateMember(i) {
+  const m = members[i];
+
+  const expire = new Date();
+  expire.setDate(expire.getDate() + 30);
+
+  const expireText = expire.toISOString().slice(0, 10);
+
+  await updateDoc(doc(db, "members", m.id), {
+    Status: "Active",
+    Package: "รายเดือน",
+    ExpireDate: expireText
+  });
+
+  alert("เปิดใช้งานสำเร็จ");
+  loadMembers();
+}
+
+async function expireMember(i) {
+  const m = members[i];
+
+  await updateDoc(doc(db, "members", m.id), {
+    Status: "Expired"
+  });
+
+  alert("ตั้งเป็นหมดอายุแล้ว");
+  loadMembers();
+}
+
+async function saveMember(i) {
+  const m = members[i];
+
+  const status = document.getElementById(`status-${i}`).value;
+  const packageName = document.getElementById(`package-${i}`).value;
+  const expireDate = document.getElementById(`expire-${i}`).value;
+
+  await updateDoc(doc(db, "members", m.id), {
+    Status: status,
+    Package: packageName,
+    ExpireDate: expireDate
+  });
+
+  alert("บันทึกแล้ว");
+  loadMembers();
+}
+
+loadMembers();
+</script>
+
+</body>
+</html>
