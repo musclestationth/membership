@@ -50,8 +50,7 @@ const db = getFirestore(app);
 
 let members = [];
 
-window.activateMember = activateMember;
-window.expireMember = expireMember;
+
 window.saveMember = saveMember;
 window.loadMembers = loadMembers;
 
@@ -78,70 +77,35 @@ function renderMembers() {
   }
 
   document.getElementById('app').innerHTML = members.map((m, i) => `
-    <div class="card">
-      <h3>${m.FullName || m.DisplayName || '-'}</h3>
-      <p class="small">MemberID: ${m.MemberID || '-'}</p>
-      <p class="small">Phone: ${m.Phone || '-'}</p>
-      <p class="small">LINE ID: ${m.LineUserID || m.id}</p>
+    <div class="card" style="padding:12px;">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
 
-      <div class="row">
-        <div>
-          <label class="small">Status</label><br>
-          <select id="status-${i}">
-            <option value="Pending" ${m.Status === 'Pending' ? 'selected' : ''}>Pending</option>
-            <option value="Active" ${m.Status === 'Active' ? 'selected' : ''}>Active</option>
-            <option value="Expired" ${m.Status === 'Expired' ? 'selected' : ''}>Expired</option>
-          </select>
+        <div style="flex:2;min-width:180px;">
+          <b>${m.FullName || m.DisplayName || '-'}</b><br>
+          <span class="small">${m.Phone || '-'}</span>
         </div>
 
-        <div>
-          <label class="small">Package</label><br>
-          <input id="package-${i}" value="${m.Package || ''}" placeholder="เช่น รายเดือน">
-        </div>
+        <select id="status-${i}" style="width:110px;">
+          <option value="Pending" ${m.Status === 'Pending' ? 'selected' : ''}>Pending</option>
+          <option value="Active" ${m.Status === 'Active' ? 'selected' : ''}>Active</option>
+          <option value="Expired" ${m.Status === 'Expired' ? 'selected' : ''}>Expired</option>
+        </select>
 
-        <div>
-          <label class="small">ExpireDate</label><br>
-          <input id="expire-${i}" type="date" value="${m.ExpireDate || ''}">
-        </div>
+        <input id="package-${i}" value="${m.Package || ''}" placeholder="Package" style="width:120px;">
+
+        <input id="expire-${i}" type="date" value="${m.ExpireDate || ''}" style="width:150px;">
+
+        <button onclick="saveMember(${i})" style="width:auto;padding:10px 16px;">
+          บันทึก
+        </button>
+
       </div>
-
-      <br>
-
-      <button class="green" onclick="activateMember(${i})">เปิดใช้งาน 30 วัน</button>
-      <button onclick="saveMember(${i})">บันทึก</button>
-      <button class="gray" onclick="expireMember(${i})">ตั้งเป็นหมดอายุ</button>
     </div>
   `).join('');
 }
 
-async function activateMember(i) {
-  const m = members[i];
 
-  const expire = new Date();
-  expire.setDate(expire.getDate() + 30);
 
-  const expireText = expire.toISOString().slice(0, 10);
-
-  await updateDoc(doc(db, "members", m.id), {
-    Status: "Active",
-    Package: "รายเดือน",
-    ExpireDate: expireText
-  });
-
-  alert("เปิดใช้งานสำเร็จ");
-  loadMembers();
-}
-
-async function expireMember(i) {
-  const m = members[i];
-
-  await updateDoc(doc(db, "members", m.id), {
-    Status: "Expired"
-  });
-
-  alert("ตั้งเป็นหมดอายุแล้ว");
-  loadMembers();
-}
 
 async function saveMember(i) {
   const m = members[i];
