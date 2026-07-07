@@ -76,7 +76,18 @@ function renderMembers() {
     return;
   }
 
-  document.getElementById('app').innerHTML = members.map((m, i) => `
+  document.getElementById('app').innerHTML = `
+  <div class="card" style="padding:10px;background:#222;">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-weight:bold;">
+      <div style="flex:2;min-width:180px;">สมาชิก</div>
+      <div style="width:110px;">สถานะ</div>
+      <div style="width:120px;">แพ็กเกจ</div>
+      <div style="width:150px;">วันหมดอายุ</div>
+      <div style="width:90px;"></div>
+    </div>
+  </div>
+
+  ${members.map((m, i) => `
     <div class="card" style="padding:12px;">
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
 
@@ -106,7 +117,8 @@ function renderMembers() {
 
       </div>
     </div>
-  `).join('');
+`).join('')}
+`;
 }
 
 
