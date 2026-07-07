@@ -22,13 +22,13 @@
 <div class="container">
   <h1>🏋️ Admin สมาชิกสถานีนักกล้าม</h1>
   <p class="small">จัดการสมาชิกจาก Firebase</p>
-  <input
+
+<input
   id="searchPhone"
-  placeholder="ค้นหาจากเบอร์โทร"
+  placeholder="ค้นหาจากเบอร์โทร เช่น 081"
   oninput="renderMembers()"
   style="width:100%;box-sizing:border-box;margin-bottom:12px;"
 >
-
   <div id="app">กำลังโหลดข้อมูล...</div>
 </div>
 
@@ -79,12 +79,11 @@ async function loadMembers() {
 function renderMembers() {
   const keyword = document.getElementById('searchPhone')?.value.trim() || '';
 
-  const filteredMembers = members.filter(m => {
-    const phone = String(m.Phone || '');
-    return phone.includes(keyword);
-  });
+  const list = keyword
+    ? members.filter(m => String(m.Phone || '').includes(keyword))
+    : members;
 
-  if (filteredMembers.length === 0) {
+  if (list.length === 0) {
     document.getElementById('app').innerHTML = '<div class="card">ไม่พบสมาชิก</div>';
     return;
   }
@@ -100,7 +99,7 @@ function renderMembers() {
       </div>
     </div>
 
-    ${filteredMembers.map((m) => {
+    ${list.map((m) => {
       const i = members.findIndex(x => x.id === m.id);
 
       return `
@@ -112,7 +111,7 @@ function renderMembers() {
               <span class="small">เบอร์: ${m.Phone || '-'}</span><br>
               <span class="small">MemberID: ${m.MemberID || '-'}</span><br>
               <span class="small">Display: ${m.DisplayName || '-'}</span><br>
-              <span class="small">วันเกิด: ${formatDate(m.Birthday)}</span>
+              <span class="small">วันเกิด: ${m.Birthday || '-'}</span>
             </div>
 
             <select id="status-${i}" style="width:110px;">
