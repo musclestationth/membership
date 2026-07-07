@@ -22,6 +22,12 @@
 <div class="container">
   <h1>🏋️ Admin สมาชิกสถานีนักกล้าม</h1>
   <p class="small">จัดการสมาชิกจาก Firebase</p>
+  <input
+  id="searchPhone"
+  placeholder="ค้นหาจากเบอร์โทร"
+  oninput="renderMembers()"
+  style="width:100%;box-sizing:border-box;margin-bottom:12px;"
+>
 
   <div id="app">กำลังโหลดข้อมูล...</div>
 </div>
@@ -71,54 +77,68 @@ async function loadMembers() {
 }
 
 function renderMembers() {
-  if (members.length === 0) {
-    document.getElementById('app').innerHTML = '<div class="card">ยังไม่มีสมาชิก</div>';
+  const keyword = document.getElementById('searchPhone')?.value.trim() || '';
+
+  const filteredMembers = members.filter(m => {
+    const phone = String(m.Phone || '');
+    return phone.includes(keyword);
+  });
+
+  if (filteredMembers.length === 0) {
+    document.getElementById('app').innerHTML = '<div class="card">ไม่พบสมาชิก</div>';
     return;
   }
 
   document.getElementById('app').innerHTML = `
-  <div class="card" style="padding:10px;background:#222;">
-    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-weight:bold;">
-      <div style="flex:2;min-width:180px;">สมาชิก</div>
-      <div style="width:110px;">สถานะ</div>
-      <div style="width:120px;">แพ็กเกจ</div>
-      <div style="width:150px;">วันหมดอายุ</div>
-      <div style="width:90px;"></div>
-    </div>
-  </div>
-
-  ${members.map((m, i) => `
-    <div class="card" style="padding:12px;">
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-
-        <div style="flex:2;min-width:180px;">
-          <b>${m.FullName || m.DisplayName || '-'}</b><br>
-          <span class="small">${m.Phone || '-'}</span>
-        </div>
-
-        <select id="status-${i}" style="width:110px;">
-          <option value="Pending" ${m.Status === 'Pending' ? 'selected' : ''}>Pending</option>
-          <option value="Active" ${m.Status === 'Active' ? 'selected' : ''}>Active</option>
-          <option value="Expired" ${m.Status === 'Expired' ? 'selected' : ''}>Expired</option>
-        </select>
-
-       <select id="package-${i}" style="width:120px;">
-  <option value="">-</option>
-  <option value="รายวัน" ${m.Package === 'รายวัน' ? 'selected' : ''}>รายวัน</option>
-  <option value="รายเดือน" ${m.Package === 'รายเดือน' ? 'selected' : ''}>รายเดือน</option>
-  <option value="รายปี" ${m.Package === 'รายปี' ? 'selected' : ''}>รายปี</option>
-</select>
-
-        <input id="expire-${i}" type="date" value="${m.ExpireDate || ''}" style="width:150px;">
-
-        <button onclick="saveMember(${i})" style="width:auto;padding:10px 16px;">
-          บันทึก
-        </button>
-
+    <div class="card" style="padding:10px;background:#222;">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-weight:bold;">
+        <div style="flex:2;min-width:260px;">ข้อมูลสมาชิก</div>
+        <div style="width:110px;">สถานะ</div>
+        <div style="width:120px;">แพ็กเกจ</div>
+        <div style="width:150px;">วันหมดอายุ</div>
+        <div style="width:90px;"></div>
       </div>
     </div>
-`).join('')}
-`;
+
+    ${filteredMembers.map((m) => {
+      const i = members.findIndex(x => x.id === m.id);
+
+      return `
+        <div class="card" style="padding:12px;">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+
+            <div style="flex:2;min-width:260px;">
+              <b>${m.FullName || '-'}</b><br>
+              <span class="small">เบอร์: ${m.Phone || '-'}</span><br>
+              <span class="small">MemberID: ${m.MemberID || '-'}</span><br>
+              <span class="small">Display: ${m.DisplayName || '-'}</span><br>
+              <span class="small">วันเกิด: ${formatDate(m.Birthday)}</span>
+            </div>
+
+            <select id="status-${i}" style="width:110px;">
+              <option value="Pending" ${m.Status === 'Pending' ? 'selected' : ''}>Pending</option>
+              <option value="Active" ${m.Status === 'Active' ? 'selected' : ''}>Active</option>
+              <option value="Expired" ${m.Status === 'Expired' ? 'selected' : ''}>Expired</option>
+            </select>
+
+            <select id="package-${i}" style="width:120px;">
+              <option value="">-</option>
+              <option value="รายวัน" ${m.Package === 'รายวัน' ? 'selected' : ''}>รายวัน</option>
+              <option value="รายเดือน" ${m.Package === 'รายเดือน' ? 'selected' : ''}>รายเดือน</option>
+              <option value="รายปี" ${m.Package === 'รายปี' ? 'selected' : ''}>รายปี</option>
+            </select>
+
+            <input id="expire-${i}" type="date" value="${m.ExpireDate || ''}" style="width:150px;">
+
+            <button onclick="saveMember(${i})" style="width:auto;padding:10px 16px;">
+              บันทึก
+            </button>
+
+          </div>
+        </div>
+      `;
+    }).join('')}
+  `;
 }
 
 
