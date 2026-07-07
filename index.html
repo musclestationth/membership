@@ -401,5 +401,36 @@ if (result.success) {
 
     main();
   </script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  setDoc,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDI3i71Y6ojdsxN4a60Dli4zcCt2_fmJpc",
+  authDomain: "musclestation-3e6ca.firebaseapp.com",
+  projectId: "musclestation-3e6ca",
+  storageBucket: "musclestation-3e6ca.firebasestorage.app",
+  messagingSenderId: "840246501105",
+  appId: "1:840246501105:web:8aff7eeb2f3d2186f9d350",
+  measurementId: "G-DBZ90942NB"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+window.db = db;
+window.firebaseDoc = doc;
+window.firebaseGetDoc = getDoc;
+window.firebaseSetDoc = setDoc;
+window.serverTimestamp = serverTimestamp;
+</script>
+
+  
 </body>
 </html>
