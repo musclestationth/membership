@@ -61,19 +61,31 @@ window.saveMember = saveMember;
 window.loadMembers = loadMembers;
 
 async function loadMembers() {
-  document.getElementById('app').innerHTML = 'กำลังโหลดข้อมูล...';
+  document.getElementById('app').innerHTML =
+    '<div class="card">กำลังโหลดข้อมูล...</div>';
 
-  const snap = await getDocs(collection(db, "members"));
+  try {
+    const snap = await getDocs(collection(db, "members"));
 
-  members = [];
-  snap.forEach(docSnap => {
-    members.push({
-      id: docSnap.id,
-      ...docSnap.data()
+    members = [];
+    snap.forEach(docSnap => {
+      members.push({
+        id: docSnap.id,
+        ...docSnap.data()
+      });
     });
-  });
 
-  renderMembers();
+    renderMembers();
+
+  } catch (error) {
+    console.error(error);
+    document.getElementById('app').innerHTML = `
+      <div class="card">
+        โหลดข้อมูลไม่สำเร็จ<br>
+        <span class="small">${error.message}</span>
+      </div>
+    `;
+  }
 }
 
 function renderMembers() {
