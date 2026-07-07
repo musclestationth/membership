@@ -91,7 +91,12 @@ function renderMembers() {
           <option value="Expired" ${m.Status === 'Expired' ? 'selected' : ''}>Expired</option>
         </select>
 
-        <input id="package-${i}" value="${m.Package || ''}" placeholder="Package" style="width:120px;">
+       <select id="package-${i}" style="width:120px;">
+  <option value="">-</option>
+  <option value="รายวัน" ${m.Package === 'รายวัน' ? 'selected' : ''}>รายวัน</option>
+  <option value="รายเดือน" ${m.Package === 'รายเดือน' ? 'selected' : ''}>รายเดือน</option>
+  <option value="รายปี" ${m.Package === 'รายปี' ? 'selected' : ''}>รายปี</option>
+</select>
 
         <input id="expire-${i}" type="date" value="${m.ExpireDate || ''}" style="width:150px;">
 
