@@ -142,7 +142,7 @@ function getStatusColor(status) {
   
 
 function renderMembers() {
-    const keyword = document.getElementById('searchPhone')?.value.trim() || '';
+  const keyword = document.getElementById('searchPhone')?.value.trim() || '';
   const packageFilter = document.getElementById('searchPackage')?.value || '';
 
   const filteredList = members.filter(m => {
@@ -166,6 +166,10 @@ function renderMembers() {
   const start = (currentPage - 1) * pageSize;
   const list = filteredList.slice(start, start + pageSize);
 
+  const activeCount = members.filter(m => m.Status === 'Active').length;
+  const pendingCount = members.filter(m => m.Status === 'Pending').length;
+  const expiredCount = members.filter(m => m.Status === 'Expired').length;
+
   if (list.length === 0) {
     document.getElementById('app').innerHTML =
       '<div class="card">ไม่พบสมาชิก</div>';
@@ -173,6 +177,16 @@ function renderMembers() {
   }
 
   document.getElementById('app').innerHTML = `
+    <div class="card" style="padding:10px;background:#1a1a1a;">
+      <div style="display:flex;gap:20px;flex-wrap:wrap;">
+        <div>👥 ทั้งหมด <b>${members.length}</b></div>
+        <div style="color:#4caf50;">🟢 Active <b>${activeCount}</b></div>
+        <div style="color:#ffc107;">🟡 Pending <b>${pendingCount}</b></div>
+        <div style="color:#f44336;">🔴 Expired <b>${expiredCount}</b></div>
+        <div style="margin-left:auto;">📄 หน้า ${currentPage} / ${totalPages || 1}</div>
+      </div>
+    </div>
+
     <div class="card" style="padding:10px;background:#222;">
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-weight:bold;">
         <div style="flex:2;min-width:260px;">ข้อมูลสมาชิก</div>
