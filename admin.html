@@ -27,13 +27,13 @@
   <input
     id="searchPhone"
     placeholder="ค้นหาจากเบอร์โทร เช่น 081"
-    oninput="renderMembers()"
+    oninput="resetPageAndRender()"
     style="flex:1;box-sizing:border-box;"
   >
 
   <select
     id="searchPackage"
-    onchange="renderMembers()"
+    onchange="resetPageAndRender()"
     style="width:140px;"
   >
     <option value="">ทุกแพ็กเกจ</option>
@@ -71,11 +71,15 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 let members = [];
+  let currentPage = 1;
+const pageSize = 30;
 
 
 window.saveMember = saveMember;
 window.loadMembers = loadMembers;
   window.renderMembers = renderMembers;
+  window.changePage = changePage;
+  window.resetPageAndRender = resetPageAndRender;
 
 async function loadMembers() {
   document.getElementById('app').innerHTML =
@@ -138,10 +142,10 @@ function getStatusColor(status) {
   
 
 function renderMembers() {
-  const keyword = document.getElementById('searchPhone')?.value.trim() || '';
+    const keyword = document.getElementById('searchPhone')?.value.trim() || '';
   const packageFilter = document.getElementById('searchPackage')?.value || '';
 
-  const list = members.filter(m => {
+  const filteredList = members.filter(m => {
     const phoneMatch = keyword
       ? String(m.Phone || '').includes(keyword)
       : true;
@@ -153,8 +157,18 @@ function renderMembers() {
     return phoneMatch && packageMatch;
   });
 
+  const totalPages = Math.ceil(filteredList.length / pageSize);
+
+  if (currentPage > totalPages && totalPages > 0) {
+    currentPage = 1;
+  }
+
+  const start = (currentPage - 1) * pageSize;
+  const list = filteredList.slice(start, start + pageSize);
+
   if (list.length === 0) {
-    document.getElementById('app').innerHTML = '<div class="card">ไม่พบสมาชิก</div>';
+    document.getElementById('app').innerHTML =
+      '<div class="card">ไม่พบสมาชิก</div>';
     return;
   }
 
@@ -224,11 +238,31 @@ function renderMembers() {
         </div>
       `;
     }).join('')}
+
+    <div style="display:flex;gap:8px;justify-content:center;align-items:center;margin-top:16px;flex-wrap:wrap;">
+      <button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>
+        ก่อนหน้า
+      </button>
+
+      <span class="small">
+        หน้า ${currentPage} / ${totalPages || 1}
+      </span>
+
+      <button onclick="changePage(${currentPage + 1})" ${currentPage >= totalPages ? 'disabled' : ''}>
+        ถัดไป
+      </button>
+    </div>
   `;
 }
+function changePage(page) {
+  currentPage = page;
+  renderMembers();
+}
 
-
-
+function resetPageAndRender() {
+  currentPage = 1;
+  renderMembers();
+}
 
 async function saveMember(i) {
   const m = members[i];
