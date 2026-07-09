@@ -166,9 +166,9 @@ function renderMembers() {
   const start = (currentPage - 1) * pageSize;
   const list = filteredList.slice(start, start + pageSize);
 
-  const activeCount = members.filter(m => m.Status === 'Active').length;
-  const pendingCount = members.filter(m => m.Status === 'Pending').length;
-  const expiredCount = members.filter(m => m.Status === 'Expired').length;
+  const activeCount = members.filter(m => getRealStatus(m) === 'Active').length;
+  const pendingCount = members.filter(m => getRealStatus(m) === 'Pending').length;
+  const expiredCount = members.filter(m => getRealStatus(m) === 'Expired').length;
 
   if (list.length === 0) {
     document.getElementById('app').innerHTML =
@@ -217,7 +217,7 @@ function renderMembers() {
   id="status-${i}"
   style="
     width:110px;
-    background:${getStatusColor(m.Status)};
+    background:${getStatusColor(getRealStatus(m))};
     color:white;
     font-weight:bold;
   "
@@ -229,9 +229,9 @@ function renderMembers() {
       '#555';
   "
 >
-              <option value="Pending" ${m.Status === 'Pending' ? 'selected' : ''}>Pending</option>
-              <option value="Active" ${m.Status === 'Active' ? 'selected' : ''}>Active</option>
-              <option value="Expired" ${m.Status === 'Expired' ? 'selected' : ''}>Expired</option>
+              <option value="Pending" ${getRealStatus(m) === 'Pending' ? 'selected' : ''}>Pending</option>
+              <option value="Active" ${getRealStatus(m) === 'Active' ? 'selected' : ''}>Active</option>
+              <option value="Expired" ${getRealStatus(m) === 'Expired' ? 'selected' : ''}>Expired</option>
             </select>
 
             <select id="package-${i}" style="width:120px;">
@@ -293,6 +293,18 @@ async function saveMember(i) {
 
   alert("บันทึกแล้ว");
   loadMembers();
+}
+  function getRealStatus(member) {
+  const today = new Date().toISOString().split('T')[0];
+
+  if (
+    member.ExpireDate &&
+    member.ExpireDate < today
+  ) {
+    return 'Expired';
+  }
+
+  return member.Status || 'Pending';
 }
 
 loadMembers();
