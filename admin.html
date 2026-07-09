@@ -39,6 +39,7 @@
     <option value="">ทุกแพ็กเกจ</option>
     <option value="รายวัน">รายวัน</option>
     <option value="รายเดือน">รายเดือน</option>
+    <option value="ราย6เดือน">ราย6เดือน</option>
     <option value="รายปี">รายปี</option>
   </select>
 </div>
@@ -120,6 +121,20 @@ function getStatusColor(status) {
       return '#555';
   }
 }
+
+  function formatCreatedAt(createdAt) {
+  if (!createdAt) return '-';
+
+  const date = createdAt.toDate ? createdAt.toDate() : new Date(createdAt);
+
+  return date.toLocaleString('th-TH', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
   
 
 function renderMembers() {
@@ -161,8 +176,9 @@ function renderMembers() {
         <div class="card" style="padding:12px;">
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
 
-            <div style="flex:2;min-width:260px;">
-              <b>${m.FullName || '-'}</b><br>
+<div style="flex:2;min-width:260px;">
+  <span class="small">วันที่สมัคร: ${formatCreatedAt(m.CreatedAt)}</span><br>
+  <b>${m.FullName || '-'}</b><br>
               <span class="small">เบอร์: ${m.Phone || '-'}</span><br>
               <span class="small">MemberID: ${m.MemberID || '-'}</span><br>
               <span class="small">Display: ${m.DisplayName || '-'}</span><br>
@@ -194,6 +210,7 @@ function renderMembers() {
               <option value="">-</option>
               <option value="รายวัน" ${m.Package === 'รายวัน' ? 'selected' : ''}>รายวัน</option>
               <option value="รายเดือน" ${m.Package === 'รายเดือน' ? 'selected' : ''}>รายเดือน</option>
+              <option value="ราย6เดือน" ${m.Package === 'ราย6เดือน' ? 'selected' : ''}>ราย6เดือน</option>
               <option value="รายปี" ${m.Package === 'รายปี' ? 'selected' : ''}>รายปี</option>
             </select>
 
