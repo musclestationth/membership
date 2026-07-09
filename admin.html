@@ -105,6 +105,23 @@ const snap = await getDocs(q);
   }
 }
 
+function getStatusColor(status) {
+  switch (status) {
+    case 'Active':
+      return '#2e7d32'; // เขียว
+
+    case 'Pending':
+      return '#f9a825'; // เหลือง
+
+    case 'Expired':
+      return '#c62828'; // แดง
+
+    default:
+      return '#555';
+  }
+}
+  
+
 function renderMembers() {
   const keyword = document.getElementById('searchPhone')?.value.trim() || '';
   const packageFilter = document.getElementById('searchPackage')?.value || '';
@@ -152,7 +169,22 @@ function renderMembers() {
               <span class="small">วันเกิด: ${m.Birthday || '-'}</span>
             </div>
 
-            <select id="status-${i}" style="width:110px;">
+            <select
+  id="status-${i}"
+  style="
+    width:110px;
+    background:${getStatusColor(m.Status)};
+    color:white;
+    font-weight:bold;
+  "
+  onchange="
+    this.style.background=
+      this.value==='Active' ? '#2e7d32' :
+      this.value==='Pending' ? '#f9a825' :
+      this.value==='Expired' ? '#c62828' :
+      '#555';
+  "
+>
               <option value="Pending" ${m.Status === 'Pending' ? 'selected' : ''}>Pending</option>
               <option value="Active" ${m.Status === 'Active' ? 'selected' : ''}>Active</option>
               <option value="Expired" ${m.Status === 'Expired' ? 'selected' : ''}>Expired</option>
