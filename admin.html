@@ -42,6 +42,7 @@
     <option value="ราย3เดือน">ราย3เดือน</option>
     <option value="ราย6เดือน">ราย6เดือน</option>
     <option value="รายปี">รายปี</option>
+    <option value="Special VIP">Special VIP</option>
   </select>
 </div>
   <div id="app">กำลังโหลดข้อมูล...</div>
@@ -220,11 +221,13 @@ const expireTomorrowList = members.filter(m =>
   m.ExpireDate === tomorrowText
 );
 
-  if (list.length === 0) {
-    document.getElementById('app').innerHTML =
-      '<div class="card">ไม่พบสมาชิก</div>';
-    return;
-  }
+const emptyMessage = list.length === 0
+  ? `
+    <div class="card" style="text-align:center;color:#aaa;">
+      ไม่พบสมาชิกในสถานะนี้
+    </div>
+  `
+  : '';
 
   document.getElementById('app').innerHTML = `
 <div class="card" style="padding:10px;background:#1a1a1a;">
@@ -299,10 +302,10 @@ const expireTomorrowList = members.filter(m =>
       </div>
     </div>
 
-    ${list.map((m) => {
-      const i = members.findIndex(x => x.id === m.id);
+${list.length === 0 ? emptyMessage : list.map((m) => {
+  const i = members.findIndex(x => x.id === m.id);
 
-      return `
+  return `
         <div class="card" style="padding:12px;">
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
 
@@ -337,6 +340,9 @@ const expireTomorrowList = members.filter(m =>
               <option value="ราย3เดือน" ${m.Package === 'ราย3เดือน' ? 'selected' : ''}>ราย3เดือน</option>
               <option value="ราย6เดือน" ${m.Package === 'ราย6เดือน' ? 'selected' : ''}>ราย6เดือน</option>
               <option value="รายปี" ${m.Package === 'รายปี' ? 'selected' : ''}>รายปี</option>
+              <option value="Special VIP" ${m.Package === 'Special VIP' ? 'selected' : ''}>
+  Special VIP
+</option>
             </select>
 
             <input id="expire-${i}" type="date" value="${m.ExpireDate || ''}" style="width:150px;">
@@ -410,6 +416,9 @@ function resetPageAndRender() {
       expireDate.setFullYear(expireDate.getFullYear() + 1);
       break;
 
+      case 'Special VIP':
+  return '';
+
     default:
       return '';
   }
@@ -446,16 +455,19 @@ async function saveMember(i) {
     return;
   }
 
-  if (!expireDate) {
+  if (packageName !== 'Special VIP' && !expireDate) {
     alert("ไม่พบวันหมดอายุ กรุณาตรวจสอบวันที่สมัคร");
     return;
   }
+
+  const finalExpireDate =
+    packageName === 'Special VIP' ? '' : expireDate;
 
   try {
     await updateDoc(doc(db, "members", m.id), {
       Status: "Active",
       Package: packageName,
-      ExpireDate: expireDate
+      ExpireDate: finalExpireDate
     });
 
     alert("บันทึกแล้ว สมาชิกถูกเปลี่ยนเป็น Active");
