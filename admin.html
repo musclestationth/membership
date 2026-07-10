@@ -258,6 +258,13 @@ function getStatusColor(status) {
     minute: '2-digit'
   });
 }
+  function formatThaiDate(dateText) {
+  if (!dateText) return '-';
+
+  const [year, month, day] = dateText.split('-');
+
+  return `${day}/${month}/${year}`;
+}
   
 
 function renderMembers() {
@@ -478,9 +485,8 @@ ${list.length === 0 ? emptyMessage : list.map((m) => {
     font-weight:bold;
   "
 >
-  ${m.ExpireDate || '-'}
+  ${formatThaiDate(m.ExpireDate)}
 </div>
-
             <button onclick="saveMember(${i})" style="width:auto;padding:10px 16px;">
               บันทึก
             </button>
@@ -578,8 +584,8 @@ function updateExpireDate(index) {
     bonusDays
   );
 
-  document.getElementById(`expire-${index}`).innerText =
-  expireDate || '-';
+document.getElementById(`expire-${index}`).innerText =
+  formatThaiDate(expireDate);
 }
 
 async function saveMember(i) {
@@ -588,11 +594,16 @@ async function saveMember(i) {
   const packageName =
     document.getElementById(`package-${i}`).value;
 
-  const expireDate =
-  document.getElementById(`expire-${i}`).innerText;
-  const bonusDays = Number(
+const bonusDays = Number(
   document.getElementById(`bonus-${i}`).value || 0
 );
+
+const expireDate = calculateExpireDate(
+  m.CreatedAt,
+  packageName,
+  bonusDays
+);
+
 
   if (!packageName) {
     alert("กรุณาเลือกแพ็กเกจก่อนบันทึก");
