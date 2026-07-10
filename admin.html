@@ -74,6 +74,7 @@ const db = getFirestore(app);
 let members = [];
   let currentPage = 1;
 const pageSize = 30;
+  let statusFilter = '';
 
 
 window.saveMember = saveMember;
@@ -81,6 +82,7 @@ window.loadMembers = loadMembers;
   window.renderMembers = renderMembers;
   window.changePage = changePage;
   window.resetPageAndRender = resetPageAndRender;
+  window.filterStatus = filterStatus;
   window.updateExpireDate = updateExpireDate;
 
   function formatLocalDate(date) {
@@ -182,17 +184,21 @@ function renderMembers() {
   const keyword = document.getElementById('searchPhone')?.value.trim() || '';
   const packageFilter = document.getElementById('searchPackage')?.value || '';
 
-  const filteredList = members.filter(m => {
-    const phoneMatch = keyword
-      ? String(m.Phone || '').includes(keyword)
-      : true;
+const filteredList = members.filter(m => {
+  const phoneMatch = keyword
+    ? String(m.Phone || '').includes(keyword)
+    : true;
 
-    const packageMatch = packageFilter
-      ? m.Package === packageFilter
-      : true;
+  const packageMatch = packageFilter
+    ? m.Package === packageFilter
+    : true;
 
-    return phoneMatch && packageMatch;
-  });
+  const statusMatch = statusFilter
+    ? getRealStatus(m) === statusFilter
+    : true;
+
+  return phoneMatch && packageMatch && statusMatch;
+});
 
   const totalPages = Math.ceil(filteredList.length / pageSize);
 
@@ -221,15 +227,55 @@ const expireTomorrowList = members.filter(m =>
   }
 
   document.getElementById('app').innerHTML = `
-    <div class="card" style="padding:10px;background:#1a1a1a;">
-      <div style="display:flex;gap:20px;flex-wrap:wrap;">
-        <div>👥 ทั้งหมด <b>${members.length}</b></div>
-        <div style="color:#4caf50;">🟢 Active <b>${activeCount}</b></div>
-        <div style="color:#ffc107;">🟡 Pending <b>${pendingCount}</b></div>
-        <div style="color:#f44336;">🔴 Expired <b>${expiredCount}</b></div>
-        <div style="margin-left:auto;">📄 หน้า ${currentPage} / ${totalPages || 1}</div>
-      </div>
+<div class="card" style="padding:10px;background:#1a1a1a;">
+  <div style="display:flex;gap:10px;flex-wrap:wrap;">
+
+    <button
+      onclick="filterStatus('')"
+      style="
+        background:${statusFilter === '' ? '#555' : '#333'};
+        color:white;
+      "
+    >
+      👥 ทั้งหมด ${members.length}
+    </button>
+
+    <button
+      onclick="filterStatus('Active')"
+      style="
+        background:${statusFilter === 'Active' ? '#2e7d32' : '#333'};
+        color:white;
+      "
+    >
+      🟢 Active ${activeCount}
+    </button>
+
+    <button
+      onclick="filterStatus('Pending')"
+      style="
+        background:${statusFilter === 'Pending' ? '#f9a825' : '#333'};
+        color:white;
+      "
+    >
+      🟡 Pending ${pendingCount}
+    </button>
+
+    <button
+      onclick="filterStatus('Expired')"
+      style="
+        background:${statusFilter === 'Expired' ? '#c62828' : '#333'};
+        color:white;
+      "
+    >
+      🔴 Expired ${expiredCount}
+    </button>
+
+    <div style="margin-left:auto;">
+      📄 หน้า ${currentPage}/${totalPages || 1}
     </div>
+
+  </div>
+</div>
 
 
     ${expireTomorrowList.length > 0 ? `
@@ -272,12 +318,9 @@ const expireTomorrowList = members.filter(m =>
 <div
   style="
     width:90px;
-    padding:10px;
-    border-radius:8px;
     text-align:center;
-    background:${getStatusColor(getRealStatus(m))};
-    color:white;
     font-weight:bold;
+    color:${getStatusColor(getRealStatus(m))};
   "
 >
   ${getRealStatus(m)}
@@ -328,6 +371,11 @@ function changePage(page) {
 }
 
 function resetPageAndRender() {
+  currentPage = 1;
+  renderMembers();
+}
+  function filterStatus(status) {
+  statusFilter = status;
   currentPage = 1;
   renderMembers();
 }
