@@ -368,7 +368,16 @@ ${list.length === 0 ? emptyMessage : list.map((m) => {
 </select>
             
 
-            <input id="expire-${i}" type="date" value="${m.ExpireDate || ''}" style="width:150px;">
+<div
+  id="expire-${i}"
+  style="
+    width:150px;
+    color:#4caf50;
+    font-weight:bold;
+  "
+>
+  ${m.ExpireDate || '-'}
+</div>
 
             <button onclick="saveMember(${i})" style="width:auto;padding:10px 16px;">
               บันทึก
@@ -467,7 +476,8 @@ function updateExpireDate(index) {
     bonusDays
   );
 
-  document.getElementById(`expire-${index}`).value = expireDate;
+  document.getElementById(`expire-${index}`).innerText =
+  expireDate || '-';
 }
 
 async function saveMember(i) {
@@ -477,7 +487,7 @@ async function saveMember(i) {
     document.getElementById(`package-${i}`).value;
 
   const expireDate =
-    document.getElementById(`expire-${i}`).value;
+  document.getElementById(`expire-${i}`).innerText;
   const bonusDays = Number(
   document.getElementById(`bonus-${i}`).value || 0
 );
