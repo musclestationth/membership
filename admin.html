@@ -7,7 +7,11 @@
 
   <style>
     body { margin:0; font-family:Arial,sans-serif; background:#111; color:#fff; }
-    .container { padding:20px; max-width:900px; margin:auto; }
+    .container {
+  padding: 20px;
+  max-width: 1150px;
+  margin: auto;
+}
     .card { background:#1c1c1c; border:1px solid #333; border-radius:16px; padding:16px; margin-bottom:14px; }
     input, select, button { padding:10px; border-radius:8px; border:none; margin:4px 0; }
     button { background:#e53935; color:#fff; font-weight:bold; cursor:pointer; }
@@ -94,6 +98,79 @@
     transform: scale(1) translateY(0);
   }
 }
+    .table-row {
+  display: grid;
+  grid-template-columns:
+    minmax(320px, 1fr)
+    90px
+    150px
+    165px
+    160px
+    90px;
+  gap: 10px;
+  align-items: center;
+}
+
+.table-header {
+  padding: 16px;
+  background: #222;
+  font-weight: bold;
+}
+
+.table-header > div:not(:first-child) {
+  text-align: center;
+}
+
+.member-info {
+  min-width: 0;
+}
+
+.status-column {
+  text-align: center;
+  font-weight: bold;
+}
+
+.table-row select {
+  width: 100%;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+.expire-column {
+  text-align: center;
+  color: #4caf50;
+  font-weight: bold;
+}
+
+.save-button {
+  width: 90px;
+  margin: 0;
+  padding: 10px 8px;
+}
+
+@media (max-width: 1050px) {
+  .table-row {
+    grid-template-columns:
+      minmax(260px, 1fr)
+      80px
+      130px
+      145px
+      135px
+      80px;
+  }
+
+  .save-button {
+    width: 80px;
+  }
+}
+    .card.table-row {
+  padding: 12px;
+}
+
+.card.table-row.table-header {
+  padding: 12px;
+}
+    
   </style>
 </head>
 
@@ -378,47 +455,22 @@ const emptyMessage = list.length === 0
   </div>
 ` : ''}
 
-<div class="card" style="padding:10px;background:#222;">
-  <div
-    style="
-      display:flex;
-      align-items:center;
-      gap:8px;
-      flex-wrap:wrap;
-      font-weight:bold;
-    "
-  >
-    <div style="flex:2;min-width:260px;">
-      ข้อมูลสมาชิก
-    </div>
-
-    <div style="width:90px;text-align:center;">
-      สถานะ
-    </div>
-
-    <div style="width:120px;text-align:left;">
-      แพ็กเกจ
-    </div>
-
-    <div style="width:130px;text-align:left;">
-      โปรโมชั่น
-    </div>
-
-    <div style="width:150px;text-align:left;">
-      วันหมดอายุ
-    </div>
-
-    <div style="width:90px;"></div>
-  </div>
+<div class="card table-row table-header">
+  <div>ข้อมูลสมาชิก</div>
+  <div>สถานะ</div>
+  <div>แพ็กเกจ</div>
+  <div>โปรโมชั่น</div>
+  <div>วันหมดอายุ</div>
+  <div></div>
 </div>
+
 ${list.length === 0 ? emptyMessage : list.map((m) => {
   const i = members.findIndex(x => x.id === m.id);
 
   return `
-        <div class="card" style="padding:12px;">
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+<div class="card table-row">
 
-<div style="flex:2;min-width:260px;">
+<div class="member-info">
   <span class="small">วันที่สมัคร: ${formatCreatedAt(m.CreatedAt)}</span><br>
   <b>${m.FullName || '-'}</b><br>
               <span class="small">เบอร์: ${m.Phone || '-'}</span><br>
@@ -428,19 +480,15 @@ ${list.length === 0 ? emptyMessage : list.map((m) => {
             </div>
 
 <div
-  style="
-    width:90px;
-    text-align:center;
-    font-weight:bold;
-    color:${getStatusColor(getRealStatus(m))};
-  "
+  class="status-column"
+  style="color:${getStatusColor(getRealStatus(m))};"
 >
   ${getRealStatus(m)}
 </div>
 
             <select
   id="package-${i}"
-  style="width:120px;"
+ 
   onchange="updateExpireDate(${i})"
 >
               <option value="">-</option>
@@ -456,7 +504,6 @@ ${list.length === 0 ? emptyMessage : list.map((m) => {
 
 <select
   id="bonus-${i}"
-  style="width:130px;"
   onchange="updateExpireDate(${i})"
 >
   <option value="0" ${Number(m.BonusDays || 0) === 0 ? 'selected' : ''}>
@@ -479,20 +526,19 @@ ${list.length === 0 ? emptyMessage : list.map((m) => {
 
 <div
   id="expire-${i}"
-  style="
-    width:150px;
-    color:#4caf50;
-    font-weight:bold;
-  "
+  class="expire-column"
 >
   ${formatThaiDate(m.ExpireDate)}
 </div>
-            <button onclick="saveMember(${i})" style="width:auto;padding:10px 16px;">
-              บันทึก
-            </button>
+<button
+  onclick="saveMember(${i})"
+  class="save-button"
+>
+  บันทึก
+</button>
 
           </div>
-        </div>
+  
       `;
     }).join('')}
 
