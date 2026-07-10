@@ -345,6 +345,29 @@ ${list.length === 0 ? emptyMessage : list.map((m) => {
 </option>
             </select>
 
+<select
+  id="bonus-${i}"
+  style="width:130px;"
+  onchange="updateExpireDate(${i})"
+>
+  <option value="0" ${Number(m.BonusDays || 0) === 0 ? 'selected' : ''}>
+    ไม่มีวันแถม
+  </option>
+
+  <option value="30" ${Number(m.BonusDays || 0) === 30 ? 'selected' : ''}>
+    แถม 30 วัน
+  </option>
+
+  <option value="60" ${Number(m.BonusDays || 0) === 60 ? 'selected' : ''}>
+    แถม 60 วัน
+  </option>
+
+  <option value="90" ${Number(m.BonusDays || 0) === 90 ? 'selected' : ''}>
+    แถม 90 วัน
+  </option>
+</select>
+            
+
             <input id="expire-${i}" type="date" value="${m.ExpireDate || ''}" style="width:150px;">
 
             <button onclick="saveMember(${i})" style="width:auto;padding:10px 16px;">
@@ -386,7 +409,7 @@ function resetPageAndRender() {
   renderMembers();
 }
 
-  function calculateExpireDate(createdAt, packageName) {
+  function calculateExpireDate(createdAt, packageName, bonusDays = 0) {
   if (!createdAt || !packageName) return '';
 
   const startDate = createdAt.toDate
@@ -422,23 +445,29 @@ function resetPageAndRender() {
     default:
       return '';
   }
-
+if (bonusDays > 0) {
+  expireDate.setDate(expireDate.getDate() + bonusDays);
+}
   return formatLocalDate(expireDate);
 }
 
-  function updateExpireDate(index) {
+function updateExpireDate(index) {
   const packageName =
     document.getElementById(`package-${index}`).value;
+
+  const bonusDays = Number(
+    document.getElementById(`bonus-${index}`).value || 0
+  );
 
   const member = members[index];
 
   const expireDate = calculateExpireDate(
     member.CreatedAt,
-    packageName
+    packageName,
+    bonusDays
   );
 
-  document.getElementById(`expire-${index}`).value =
-    expireDate;
+  document.getElementById(`expire-${index}`).value = expireDate;
 }
 
 async function saveMember(i) {
@@ -449,6 +478,9 @@ async function saveMember(i) {
 
   const expireDate =
     document.getElementById(`expire-${i}`).value;
+  const bonusDays = Number(
+  document.getElementById(`bonus-${i}`).value || 0
+);
 
   if (!packageName) {
     alert("กรุณาเลือกแพ็กเกจก่อนบันทึก");
@@ -464,13 +496,14 @@ async function saveMember(i) {
     packageName === 'Special VIP' ? '' : expireDate;
 
   try {
-    await updateDoc(doc(db, "members", m.id), {
-      Status: "Active",
-      Package: packageName,
-      ExpireDate: finalExpireDate
-    });
+  await updateDoc(doc(db, "members", m.id), {
+    Status: "Active",
+    Package: packageName,
+    BonusDays: bonusDays,
+    ExpireDate: finalExpireDate
+  });
 
-    alert("บันทึกแล้ว สมาชิกถูกเปลี่ยนเป็น Active");
+    alert("บันทึกแล้ว");
     await loadMembers();
 
   } catch (error) {
