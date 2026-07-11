@@ -228,6 +228,7 @@
     <option value="ราย6เดือน">ราย6เดือน</option>
     <option value="รายปี">รายปี</option>
     <option value="Special VIP">Special VIP</option>
+    <option value="ราย10ครั้ง">ราย10ครั้ง</option>
   </select>
 </div>
   <div id="app">กำลังโหลดข้อมูล...</div>
@@ -271,8 +272,8 @@ window.loadMembers = loadMembers;
   window.resetPageAndRender = resetPageAndRender;
   window.filterStatus = filterStatus;
   window.updateExpireDate = updateExpireDate;
+  window.useSession = useSession;
   window.renewMember = renewMember;
-
   function formatLocalDate(date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -508,6 +509,13 @@ ${list.length === 0 ? emptyMessage : list.map((m) => {
               <span class="small">MemberID: ${m.MemberID || '-'}</span><br>
               <span class="small">Display: ${m.DisplayName || '-'}</span><br>
               <span class="small">วันเกิด: ${m.Birthday || '-'}</span>
+
+${m.Package === 'ราย10ครั้ง' ? `
+<br>
+<span style="color:#4caf50;font-weight:bold;">
+คงเหลือ ${m.Remaining || 0} ครั้ง
+</span>
+` : ''}
             </div>
 
 <div
@@ -528,9 +536,8 @@ ${list.length === 0 ? emptyMessage : list.map((m) => {
               <option value="ราย3เดือน" ${m.Package === 'ราย3เดือน' ? 'selected' : ''}>ราย3เดือน</option>
               <option value="ราย6เดือน" ${m.Package === 'ราย6เดือน' ? 'selected' : ''}>ราย6เดือน</option>
               <option value="รายปี" ${m.Package === 'รายปี' ? 'selected' : ''}>รายปี</option>
-              <option value="Special VIP" ${m.Package === 'Special VIP' ? 'selected' : ''}>
-  Special VIP
-</option>
+              <option value="Special VIP" ${m.Package === 'Special VIP' ? 'selected' : ''}>Special VIP</option>
+              <option value="ราย10ครั้ง" ${m.Package === 'ราย10ครั้ง' ? 'selected' : ''}>ราย10ครั้ง</option>
             </select>
 
 <select
@@ -572,12 +579,28 @@ ${list.length === 0 ? emptyMessage : list.map((m) => {
     </button>
   ` : ''}
 
+<div style="display:flex;flex-direction:column;gap:6px;">
+
+  ${m.Package === 'ราย10ครั้ง' &&
+    getRealStatus(m) === 'Active'
+      ? `
+      <button
+        onclick="useSession(${i})"
+        style="background:#1976d2;"
+      >
+        ใช้บริการ
+      </button>
+    `
+      : ''}
+
   <button
     onclick="saveMember(${i})"
     class="save-button"
   >
     บันทึก
   </button>
+
+</div>
 
 </div>
 
@@ -700,6 +723,42 @@ async function renewMember(i) {
     alert(`ต่ออายุไม่สำเร็จ: ${error.message}`);
   }
 }
+async function useSession(i) {
+  const m = members[i];
+
+  const today = getTodayText();
+
+  if (m.LastVisitDate === today) {
+    alert("สมาชิกใช้สิทธิ์วันนี้แล้ว");
+    return;
+  }
+
+  const remaining = Number(m.Remaining || 0);
+
+  if (remaining <= 0) {
+    alert("จำนวนครั้งคงเหลือหมดแล้ว");
+    return;
+  }
+
+  const updateData = {
+    Remaining: remaining - 1,
+    LastVisitDate: today
+  };
+
+  if (remaining - 1 <= 0) {
+    updateData.Status = "Expired";
+  }
+
+  await updateDoc(
+    doc(db, "members", m.id),
+    updateData
+  );
+
+  await loadMembers();
+
+  showSuccessModal("บันทึกการเข้าใช้เรียบร้อย");
+}
+  
 async function saveMember(i) {
   const m = members[i];
 
@@ -731,12 +790,25 @@ const expireDate = calculateExpireDate(
     packageName === 'Special VIP' ? '' : expireDate;
 
   try {
-  await updateDoc(doc(db, "members", m.id), {
-    Status: "Active",
-    Package: packageName,
-    BonusDays: bonusDays,
-    ExpireDate: finalExpireDate
-  });
+const updateData = {
+  Status: "Active",
+  Package: packageName,
+  BonusDays: bonusDays,
+  ExpireDate: finalExpireDate
+};
+
+if (
+  packageName === "ราย10ครั้ง" &&
+  (!m.Remaining || m.Package !== "ราย10ครั้ง")
+) {
+  updateData.Remaining = 10;
+  updateData.LastVisitDate = "";
+}
+
+await updateDoc(
+  doc(db, "members", m.id),
+  updateData
+);
 
 await loadMembers();
 
@@ -763,6 +835,12 @@ function closeSuccessModal() {
 window.closeSuccessModal = closeSuccessModal;
   
 function getRealStatus(member) {
+  if (
+  member.Package === 'ราย10ครั้ง' &&
+  Number(member.Remaining || 0) <= 0
+) {
+  return 'Expired';
+}
   const todayText = getTodayText();
 
   if (
