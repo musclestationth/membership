@@ -106,7 +106,7 @@
     150px
     165px
     160px
-    90px;
+    120px;
   gap: 10px;
   align-items: center;
 }
@@ -156,7 +156,7 @@
       130px
       145px
       135px
-      80px;
+      110px;
   }
 
   .save-button {
@@ -169,6 +169,35 @@
 
 .card.table-row.table-header {
   padding: 12px;
+}
+
+    .action-column {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.action-column button {
+  width: 100%;
+  margin: 0;
+}
+
+.renew-button {
+  background: #1565c0;
+  color: #fff;
+  padding: 10px 6px;
+  font-size: 13px;
+}
+
+.renew-button:hover {
+  background: #1976d2;
+}
+
+.save-button {
+  width: 100%;
+  margin: 0;
+  padding: 10px 8px;
 }
     
   </style>
@@ -213,7 +242,8 @@ import {
   doc,
   updateDoc,
   query,
-  orderBy
+  orderBy,
+  Timestamp
 } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -241,6 +271,7 @@ window.loadMembers = loadMembers;
   window.resetPageAndRender = resetPageAndRender;
   window.filterStatus = filterStatus;
   window.updateExpireDate = updateExpireDate;
+  window.renewMember = renewMember;
 
   function formatLocalDate(date) {
   const year = date.getFullYear();
@@ -530,12 +561,25 @@ ${list.length === 0 ? emptyMessage : list.map((m) => {
 >
   ${formatThaiDate(m.ExpireDate)}
 </div>
-<button
-  onclick="saveMember(${i})"
-  class="save-button"
->
-  บันทึก
-</button>
+<div class="action-column">
+
+  ${getRealStatus(m) === 'Expired' ? `
+    <button
+      onclick="renewMember(${i})"
+      class="renew-button"
+    >
+      ต่ออายุสมาชิก
+    </button>
+  ` : ''}
+
+  <button
+    onclick="saveMember(${i})"
+    class="save-button"
+  >
+    บันทึก
+  </button>
+
+</div>
 
           </div>
   
@@ -633,7 +677,29 @@ function updateExpireDate(index) {
 document.getElementById(`expire-${index}`).innerText =
   formatThaiDate(expireDate);
 }
+async function renewMember(i) {
+  const m = members[i];
 
+  try {
+    await updateDoc(doc(db, "members", m.id), {
+      CreatedAt: Timestamp.now(),
+      Status: "Pending",
+      Package: "",
+      BonusDays: 0,
+      ExpireDate: ""
+    });
+
+    await loadMembers();
+
+    showSuccessModal(
+      "เริ่มต่ออายุสมาชิกแล้ว กรุณาเลือกแพ็กเกจและกดบันทึก"
+    );
+
+  } catch (error) {
+    console.error(error);
+    alert(`ต่ออายุไม่สำเร็จ: ${error.message}`);
+  }
+}
 async function saveMember(i) {
   const m = members[i];
 
