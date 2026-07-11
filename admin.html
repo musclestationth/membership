@@ -668,6 +668,8 @@ function resetPageAndRender() {
     case 'รายปี':
       expireDate.setFullYear(expireDate.getFullYear() + 1);
       break;
+      case 'ราย10ครั้ง':
+  return '';
 
       case 'Special VIP':
   return '';
@@ -781,13 +783,20 @@ const expireDate = calculateExpireDate(
     return;
   }
 
-  if (packageName !== 'Special VIP' && !expireDate) {
-    alert("ไม่พบวันหมดอายุ กรุณาตรวจสอบวันที่สมัคร");
-    return;
-  }
+if (
+  packageName !== 'Special VIP' &&
+  packageName !== 'ราย10ครั้ง' &&
+  !expireDate
+) {
+  alert("ไม่พบวันหมดอายุ กรุณาตรวจสอบวันที่สมัคร");
+  return;
+}
 
-  const finalExpireDate =
-    packageName === 'Special VIP' ? '' : expireDate;
+const finalExpireDate =
+  packageName === 'Special VIP' ||
+  packageName === 'ราย10ครั้ง'
+    ? ''
+    : expireDate;
 
   try {
 const updateData = {
