@@ -259,6 +259,15 @@ async function submitRegister() {
 }
 
 function renderDashboard(member) {
+
+  if (
+    member.Package === 'ราย10ครั้ง' &&
+    Number(member.Remaining || 0) <= 0
+  ) {
+    renderExpired(member);
+    return;
+  }
+
   const status = member.Status;
 
   if (status === 'Pending') {
@@ -275,7 +284,13 @@ function renderDashboard(member) {
 }
 
 function renderActive(member) {
-  const daysLeft = calculateDaysLeft(member.ExpireDate);
+
+  const isSessionPackage =
+    member.Package === 'ราย10ครั้ง';
+
+  const daysLeft = calculateDaysLeft(
+    member.ExpireDate
+  );
 
   document.getElementById('app').innerHTML = `
     <div class="card">
@@ -288,8 +303,21 @@ function renderActive(member) {
       <br><br>
 
       <p>แพ็กเกจ: <b>${member.Package || '-'}</b></p>
-      <p>วันหมดอายุ: <b>${formatDate(member.ExpireDate)}</b></p>
-      <p>เหลือ: <b>${daysLeft} วัน</b></p>
+
+      ${
+        isSessionPackage
+          ? `
+            <p>
+              คงเหลือ:
+              <b>${Number(member.Remaining || 0)} ครั้ง</b>
+            </p>
+          `
+          : `
+            <p>วันหมดอายุ: <b>${formatDate(member.ExpireDate)}</b></p>
+            <p>เหลือ: <b>${daysLeft} วัน</b></p>
+          `
+      }
+
     </div>
 
     <div class="card">
