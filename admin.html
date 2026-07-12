@@ -770,9 +770,16 @@ async function saveMember(i) {
 const bonusDays = Number(
   document.getElementById(`bonus-${i}`).value || 0
 );
+const isPending =
+  getRealStatus(m) === 'Pending';
+
+const startDate =
+  isPending
+    ? new Date()
+    : m.CreatedAt;
 
 const expireDate = calculateExpireDate(
-  m.CreatedAt,
+  startDate,
   packageName,
   bonusDays
 );
