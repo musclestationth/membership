@@ -223,7 +223,7 @@
 <div style="display:flex;gap:8px;margin-bottom:12px;">
   <input
     id="searchPhone"
-    placeholder="ค้นหาจากเบอร์โทร เช่น 081"
+    placeholder="ค้นหาชื่อหรือเบอร์โทร"
     oninput="resetPageAndRender()"
     style="flex:1;box-sizing:border-box;"
   >
@@ -393,9 +393,13 @@ function renderMembers() {
   const packageFilter = document.getElementById('searchPackage')?.value || '';
 
 const filteredList = members.filter(m => {
-  const phoneMatch = keyword
-    ? String(m.Phone || '').includes(keyword)
-    : true;
+const searchText = keyword.toLowerCase();
+
+const phoneMatch = !searchText ||
+  String(m.Phone || '').toLowerCase().includes(searchText);
+
+const nameMatch = !searchText ||
+  String(m.FullName || '').toLowerCase().includes(searchText);
 
   const packageMatch = packageFilter
     ? m.Package === packageFilter
@@ -405,8 +409,11 @@ const filteredList = members.filter(m => {
     ? getRealStatus(m) === statusFilter
     : true;
 
-  return phoneMatch && packageMatch && statusMatch;
-});
+return (
+  (phoneMatch || nameMatch) &&
+  packageMatch &&
+  statusMatch
+);
 
   const totalPages = Math.ceil(filteredList.length / pageSize);
 
