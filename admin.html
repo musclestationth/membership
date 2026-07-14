@@ -141,6 +141,11 @@
   color: #4caf50;
   font-weight: bold;
 }
+    .expire-column input {
+  width: 100%;
+  margin: 0;
+  box-sizing: border-box;
+}
 
 .save-button {
   width: 90px;
@@ -199,7 +204,14 @@
   margin: 0;
   padding: 10px 8px;
 }
-    
+    .expire-column input {
+  width: 100%;
+  margin: 0;
+  box-sizing: border-box;
+  text-align: center;
+  color: #111;
+  background: #fff;
+}
   </style>
 </head>
 
@@ -562,11 +574,12 @@ ${m.Package === 'ราย10ครั้ง' ? `
 </select>
             
 
-<div
-  id="expire-${i}"
-  class="expire-column"
->
-  ${formatThaiDate(m.ExpireDate)}
+<div class="expire-column">
+  <input
+    type="date"
+    id="expire-${i}"
+    value="${m.ExpireDate || ''}"
+  >
 </div>
 <div class="action-column">
 
