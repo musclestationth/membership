@@ -699,8 +699,8 @@ function updateExpireDate(index) {
     bonusDays
   );
 
-document.getElementById(`expire-${index}`).innerText =
-  formatThaiDate(expireDate);
+  document.getElementById(`expire-${index}`).value =
+    expireDate || '';
 }
 async function renewMember(i) {
   const m = members[i];
@@ -767,70 +767,65 @@ async function saveMember(i) {
   const packageName =
     document.getElementById(`package-${i}`).value;
 
-const bonusDays = Number(
-  document.getElementById(`bonus-${i}`).value || 0
-);
-const isPending =
-  getRealStatus(m) === 'Pending';
-
-const startDate =
-  isPending
-    ? new Date()
-    : m.CreatedAt;
-
-const expireDate = calculateExpireDate(
-  startDate,
-  packageName,
-  bonusDays
-);
-
+  const bonusDays = Number(
+    document.getElementById(`bonus-${i}`).value || 0
+  );
 
   if (!packageName) {
     alert("กรุณาเลือกแพ็กเกจก่อนบันทึก");
     return;
   }
 
-if (
-  packageName !== 'Special VIP' &&
-  packageName !== 'ราย10ครั้ง' &&
-  !expireDate
-) {
-  alert("ไม่พบวันหมดอายุ กรุณาตรวจสอบวันที่สมัคร");
-  return;
-}
+  const expireDate = calculateExpireDate(
+    m.CreatedAt,
+    packageName,
+    bonusDays
+  );
 
-const finalExpireDate =
-  packageName === 'Special VIP' ||
-  packageName === 'ราย10ครั้ง'
-    ? ''
-    : expireDate;
+  const manualExpireDate =
+    document.getElementById(`expire-${i}`).value;
+
+  const finalExpireDate =
+    packageName === 'Special VIP' ||
+    packageName === 'ราย10ครั้ง'
+      ? ''
+      : (manualExpireDate || expireDate);
+
+  if (
+    packageName !== 'Special VIP' &&
+    packageName !== 'ราย10ครั้ง' &&
+    !finalExpireDate
+  ) {
+    alert("กรุณาเลือกวันหมดอายุ");
+    return;
+  }
 
   try {
-const updateData = {
-  Status: "Active",
-  Package: packageName,
-  BonusDays: bonusDays,
-  ExpireDate: finalExpireDate
-};
+    const updateData = {
+      Status: "Active",
+      Package: packageName,
+      BonusDays: bonusDays,
+      ExpireDate: finalExpireDate
+    };
 
-if (
-  packageName === "ราย10ครั้ง" &&
-  (!m.Remaining || m.Package !== "ราย10ครั้ง")
-) {
-  updateData.Remaining = 10;
-  updateData.LastVisitDate = "";
-}
+    if (
+      packageName === "ราย10ครั้ง" &&
+      (!m.Remaining || m.Package !== "ราย10ครั้ง")
+    ) {
+      updateData.Remaining = 10;
+      updateData.LastVisitDate = "";
+    }
 
-await updateDoc(
-  doc(db, "members", m.id),
-  updateData
-);
+    await updateDoc(
+      doc(db, "members", m.id),
+      updateData
+    );
 
-await loadMembers();
+    await loadMembers();
 
-showSuccessModal(
-  "บันทึกข้อมูลเรียบร้อย สมาชิกถูกเปลี่ยนเป็น Active"
-);
+    showSuccessModal(
+      "บันทึกข้อมูลเรียบร้อย สมาชิกถูกเปลี่ยนเป็น Active"
+    );
 
   } catch (error) {
     console.error(error);
