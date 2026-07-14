@@ -393,9 +393,12 @@ function renderMembers() {
   const packageFilter = document.getElementById('searchPackage')?.value || '';
 
 const filteredList = members.filter(m => {
-const phoneMatch = keyword
-  ? String(m.Phone || '').includes(keyword)
-  : true;
+  const searchText = keyword.toLowerCase();
+
+const searchMatch =
+  !searchText ||
+  String(m.Phone ?? '').toLowerCase().includes(searchText) ||
+  String(m.FullName ?? '').toLowerCase().includes(searchText);
 
   const packageMatch = packageFilter
     ? m.Package === packageFilter
@@ -405,7 +408,8 @@ const phoneMatch = keyword
     ? getRealStatus(m) === statusFilter
     : true;
 
-return phoneMatch && packageMatch && statusMatch; });
+  return searchMatch && packageMatch && statusMatch;
+});
    
 
   const totalPages = Math.ceil(filteredList.length / pageSize);
