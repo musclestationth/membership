@@ -936,7 +936,10 @@ function getRealStatus(member) {
         Gender: member.Gender || "",
         Status: member.Status || "",
         Package: member.Package || "",
-        ExpireDate: member.ExpireDate || ""
+        ExpireDate: member.ExpireDate || "",
+        Remaining: member.Remaining ?? "",
+        LastVisitDate: member.LastVisitDate || "",
+        BonusDays: member.BonusDays ?? 0
       }
     })
   }).catch(function (error) {
