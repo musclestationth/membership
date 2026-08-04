@@ -729,7 +729,9 @@ async function renewMember(i) {
     Status: "Pending",
     Package: "",
     BonusDays: 0,
-    ExpireDate: ""
+    ExpireDate: "",
+    Remaining: "",
+    LastVisitDate: ""
   };
 
   try {
@@ -829,20 +831,18 @@ async function saveMember(i) {
   const manualExpireDate =
     document.getElementById(`expire-${i}`).value;
 
-  const finalExpireDate =
-    packageName === 'Special VIP' ||
-    packageName === 'ราย10ครั้ง'
-      ? ''
-      : (manualExpireDate || expireDate);
+const finalExpireDate =
+  packageName === 'Special VIP'
+    ? ''
+    : (manualExpireDate || expireDate);
 
-  if (
-    packageName !== 'Special VIP' &&
-    packageName !== 'ราย10ครั้ง' &&
-    !finalExpireDate
-  ) {
-    alert("กรุณาเลือกวันหมดอายุ");
-    return;
-  }
+if (
+  packageName !== 'Special VIP' &&
+  !finalExpireDate
+) {
+  alert("กรุณาเลือกวันหมดอายุ");
+  return;
+}
 
   try {
     const updateData = {
