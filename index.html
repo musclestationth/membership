@@ -116,6 +116,8 @@ import {
 
 const LIFF_ID = '2010600499-3bta2tAd';
 const BOOKING_URL = 'https://liff.line.me/2010600499-kGjbynE1';
+  const BACKUP_API =
+  "https://script.google.com/macros/s/AKfycbwfnUqsmV_T1JfN10bz-kVlTikmp4e8EpF1Zj_OIpg8IrDJm6Vxnkq0gIRqX7vmoRWt/exec";
 const LINE_OA_URL = 'https://line.me/R/ti/p/@sathaninakklam';
 
 const firebaseConfig = {
@@ -246,6 +248,16 @@ async function submitRegister() {
     };
 
     await setDoc(doc(db, "members", profile.userId), member);
+    await fetch(BACKUP_API, {
+  method: "POST",
+  headers: {
+    "Content-Type": "text/plain;charset=utf-8"
+  },
+  body: JSON.stringify({
+    action: "syncMember",
+    member: member
+  })
+});
 
     renderPending({
       ...member,
