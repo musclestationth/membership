@@ -270,7 +270,9 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-
+const BACKUP_API =
+  "https://script.google.com/macros/s/AKfycbwfnUqsmV_T1JfN10bz-kVlTikmp4e8EpF1Zj_OIpg8IrDJm6Vxnkq0gIRqX7vmoRWt/exec";
+  
 let members = [];
   let currentPage = 1;
 const pageSize = 30;
@@ -722,14 +724,26 @@ function updateExpireDate(index) {
 async function renewMember(i) {
   const m = members[i];
 
+  const updateData = {
+    CreatedAt: Timestamp.now(),
+    Status: "Pending",
+    Package: "",
+    BonusDays: 0,
+    ExpireDate: ""
+  };
+
   try {
-    await updateDoc(doc(db, "members", m.id), {
-      CreatedAt: Timestamp.now(),
-      Status: "Pending",
-      Package: "",
-      BonusDays: 0,
-      ExpireDate: ""
-    });
+    await updateDoc(
+      doc(db, "members", m.id),
+      updateData
+    );
+
+    const updatedMember = {
+      ...m,
+      ...updateData
+    };
+
+    syncMemberToSheet(updatedMember);
 
     await loadMembers();
 
@@ -742,9 +756,9 @@ async function renewMember(i) {
     alert(`ต่ออายุไม่สำเร็จ: ${error.message}`);
   }
 }
+  
 async function useSession(i) {
   const m = members[i];
-
   const today = getTodayText();
 
   if (m.LastVisitDate === today) {
@@ -768,14 +782,27 @@ async function useSession(i) {
     updateData.Status = "Expired";
   }
 
-  await updateDoc(
-    doc(db, "members", m.id),
-    updateData
-  );
+  try {
+    await updateDoc(
+      doc(db, "members", m.id),
+      updateData
+    );
 
-  await loadMembers();
+    const updatedMember = {
+      ...m,
+      ...updateData
+    };
 
-  showSuccessModal("บันทึกการเข้าใช้เรียบร้อย");
+    syncMemberToSheet(updatedMember);
+
+    await loadMembers();
+
+    showSuccessModal("บันทึกการเข้าใช้เรียบร้อย");
+
+  } catch (error) {
+    console.error(error);
+    alert(`บันทึกการเข้าใช้ไม่สำเร็จ: ${error.message}`);
+  }
 }
   
 async function saveMember(i) {
@@ -833,12 +860,21 @@ async function saveMember(i) {
       updateData.LastVisitDate = "";
     }
 
-    await updateDoc(
-      doc(db, "members", m.id),
-      updateData
-    );
+await updateDoc(
+  doc(db, "members", m.id),
+  updateData
+);
 
-    await loadMembers();
+// รวมข้อมูลเดิมกับข้อมูลที่เพิ่งแก้
+const updatedMember = {
+  ...m,
+  ...updateData
+};
+
+// อัปเดต Google Sheet
+syncMemberToSheet(updatedMember);
+
+await loadMembers();
 
     showSuccessModal(
       "บันทึกข้อมูลเรียบร้อย สมาชิกถูกเปลี่ยนเป็น Active"
@@ -879,6 +915,33 @@ function getRealStatus(member) {
   }
 
   return member.Status || 'Pending';
+}
+
+  function syncMemberToSheet(member) {
+  fetch(BACKUP_API, {
+    method: "POST",
+    mode: "no-cors",
+    headers: {
+      "Content-Type": "text/plain;charset=utf-8"
+    },
+    body: JSON.stringify({
+      action: "syncMember",
+      member: {
+        MemberID: member.MemberID || "",
+        LineUserID: member.LineUserID || "",
+        DisplayName: member.DisplayName || "",
+        FullName: member.FullName || "",
+        Phone: member.Phone || "",
+        Birthday: member.Birthday || "",
+        Gender: member.Gender || "",
+        Status: member.Status || "",
+        Package: member.Package || "",
+        ExpireDate: member.ExpireDate || ""
+      }
+    })
+  }).catch(function (error) {
+    console.log("Google Sheet sync failed:", error);
+  });
 }
 
 loadMembers();
