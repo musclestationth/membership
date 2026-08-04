@@ -318,6 +318,7 @@ function getTodayText() {
 
   membersToExpire.forEach(m => {
     m.Status = "Expired";
+    syncMemberToSheet(m);
   });
 }
 
