@@ -247,23 +247,40 @@ async function submitRegister() {
       UpdatedAt: serverTimestamp()
     };
 
-    await setDoc(doc(db, "members", profile.userId), member);
-    await fetch(BACKUP_API, {
+ await setDoc(doc(db, "members", profile.userId), member);
+
+// เปลี่ยนหน้าให้ลูกค้าเห็นสถานะทันที
+renderPending({
+  ...member,
+  CreatedAt: '',
+  UpdatedAt: ''
+});
+
+// ส่งข้อมูลไป Google Sheet แบบไม่ต้องรอ
+fetch(BACKUP_API, {
   method: "POST",
+   mode: "no-cors",
   headers: {
     "Content-Type": "text/plain;charset=utf-8"
   },
   body: JSON.stringify({
     action: "syncMember",
-    member: member
+    member: {
+      MemberID: member.MemberID,
+      LineUserID: member.LineUserID,
+      DisplayName: member.DisplayName,
+      FullName: member.FullName,
+      Phone: member.Phone,
+      Birthday: member.Birthday,
+      Gender: member.Gender,
+      Status: member.Status,
+      Package: member.Package,
+      ExpireDate: member.ExpireDate
+    }
   })
+}).catch(function (backupError) {
+  console.log("Google Sheet backup failed:", backupError);
 });
-
-    renderPending({
-      ...member,
-      CreatedAt: '',
-      UpdatedAt: ''
-    });
 
   } catch (err) {
     showError(err.message);
